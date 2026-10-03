@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Commercial LEO Constellations Visual Simulator</title>
-
   <script src="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Cesium.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Widgets/widgets.css">
   <link rel="stylesheet" href="./style.css">
@@ -43,11 +42,13 @@
           <label class="switch-row"><input id="showSatellites" type="checkbox" checked><span>Show representative satellites</span></label>
           <label class="switch-row"><input id="showCoverage" type="checkbox" checked><span>Show nominal coverage footprints</span></label>
           <button id="resetViewBtn" class="secondary-btn">Reset globe view</button>
+          <button id="forceEarthBtn" class="secondary-btn">Force Earth visible</button>
         </div>
       </aside>
 
       <section class="map-panel">
         <div id="cesiumContainer"></div>
+        <div id="cesiumStatus" class="cesium-status">INITIALIZING CESIUM…</div>
 
         <div class="map-overlay map-summary">
           <span class="section-tag">VISUAL MODE</span>
@@ -133,6 +134,6 @@
     </section>
   </div>
 
-  <script src="./script.js?v=1"></script>
+  <script src="./script.js?v=3"></script>
 </body>
 </html>
