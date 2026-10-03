@@ -1,21 +1,73 @@
-const viewer = new Cesium.Viewer("cesiumContainer", {
-  animation:false,
-  timeline:false,
-  geocoder:false,
-  homeButton:true,
-  sceneModePicker:false,
-  navigationHelpButton:false,
-  fullscreenButton:true,
-  baseLayerPicker:true,
-  infoBox:false,
-  selectionIndicator:false,
-  requestRenderMode:false
-});
+let viewer;
 
-viewer.scene.backgroundColor = Cesium.Color.BLACK;
-viewer.scene.globe.show = true;
-viewer.scene.globe.enableLighting = false;
-viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b3150");
+function setCesiumStatus(message,stateClass="ok"){
+  const el=document.getElementById("cesiumStatus");
+  if(!el)return;
+  el.textContent=message;
+  el.className=`cesium-status ${stateClass}`;
+}
+
+try{
+  // This intentionally follows the same Viewer configuration used by the
+  // earlier simulator where the Cesium globe rendered correctly.
+  viewer=new Cesium.Viewer("cesiumContainer",{
+    animation:false,
+    timeline:false,
+    geocoder:false,
+    homeButton:true,
+    sceneModePicker:false,
+    navigationHelpButton:false,
+    fullscreenButton:true,
+    baseLayerPicker:true,
+    infoBox:false,
+    selectionIndicator:false
+  });
+
+  viewer.scene.backgroundColor=Cesium.Color.BLACK;
+  viewer.scene.globe.show=true;
+  viewer.scene.globe.enableLighting=false;
+  viewer.scene.globe.baseColor=Cesium.Color.fromCssColorString("#0b5d88");
+  viewer.scene.globe.depthTestAgainstTerrain=false;
+  viewer.scene.skyAtmosphere.show=true;
+
+  // A slightly smaller internal ellipsoid acts as a visual fallback.
+  // When the normal Cesium globe renders, it completely covers this object.
+  // If external imagery fails, the user still sees a blue planet instead
+  // of an empty black scene.
+  viewer.entities.add({
+    name:"Earth visual fallback",
+    position:Cesium.Cartesian3.ZERO,
+    ellipsoid:{
+      radii:new Cesium.Cartesian3(
+        6350000,
+        6350000,
+        6330000
+      ),
+      material:Cesium.Color.fromCssColorString("#0a567f"),
+      outline:false
+    }
+  });
+
+  // Initial whole-Earth view.
+  viewer.camera.setView({
+    destination:Cesium.Cartesian3.fromDegrees(
+      10,
+      18,
+      25000000
+    ),
+    orientation:{
+      heading:0,
+      pitch:Cesium.Math.toRadians(-90),
+      roll:0
+    }
+  });
+
+  setCesiumStatus("EARTH READY · CESIUM GLOBE","ok");
+}catch(error){
+  console.error("Cesium Viewer initialization failed:",error);
+  setCesiumStatus(`CESIUM ERROR: ${error.message}`,"error");
+  throw error;
+}
 
 const constellations = [
   {
@@ -228,6 +280,7 @@ function focusSelected(){
   const c=selectedConstellation();
   viewer.camera.flyTo({
     destination:Cesium.Cartesian3.fromDegrees(c.phase%180,18,Math.max(10500000,c.altitudeKm*1000*6.8)),
+    orientation:{heading:0,pitch:Cesium.Math.toRadians(-90),roll:0},
     duration:1.7
   });
 }
@@ -298,7 +351,21 @@ function setMode(mode){
 }
 
 function resetView(){
-  viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(10,20,25000000),duration:1.8});
+  viewer.scene.globe.show=true;
+  viewer.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(
+      10,
+      18,
+      25000000
+    ),
+    orientation:{
+      heading:0,
+      pitch:Cesium.Math.toRadians(-90),
+      roll:0
+    },
+    duration:1.8
+  });
+  setCesiumStatus("EARTH READY · CESIUM GLOBE","ok");
 }
 
 const pickHandler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -314,6 +381,12 @@ document.getElementById("showOrbits").addEventListener("change",e=>{state.showOr
 document.getElementById("showSatellites").addEventListener("change",e=>{state.showSatellites=e.target.checked;renderConstellations();});
 document.getElementById("showCoverage").addEventListener("change",e=>{state.showCoverage=e.target.checked;renderConstellations();});
 document.getElementById("resetViewBtn").addEventListener("click",resetView);
+document.getElementById("forceEarthBtn").addEventListener("click",()=>{
+  viewer.scene.globe.show=true;
+  viewer.scene.globe.baseColor=Cesium.Color.fromCssColorString("#0b5d88");
+  viewer.scene.skyAtmosphere.show=true;
+  resetView();
+});
 document.getElementById("chartMetric").addEventListener("change",drawChart);
 
 buildConstellationList();
@@ -321,4 +394,7 @@ buildSummaryTable();
 updateInspector();
 renderConstellations();
 drawChart();
-viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(10,20,25000000)});
+setTimeout(()=>{
+  viewer.resize();
+  resetView();
+},300);
